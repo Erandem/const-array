@@ -204,6 +204,24 @@ impl<T, const N: usize> ConstArray<T, N> {
         unsafe { core::slice::from_raw_parts(self.buf.as_ptr().cast::<T>(), self.len) }
     }
 
+    /// Returns a mutable slice that contains all initialized items
+    ///
+    /// # Example
+    /// ```rust
+    /// # use const_array::ConstArray;
+    /// let mut arr = ConstArray::from_array([0u32, 25]);
+    ///
+    /// arr.as_mut_slice()[0] = 100;
+    ///
+    /// assert_eq!(arr.as_slice(), &[100, 25]);
+    /// # assert_eq!(arr.len(), 2);
+    /// # assert_eq!(arr.capacity(), 2);
+    /// ```
+    #[must_use]
+    pub const fn as_mut_slice(&mut self) -> &mut [T] {
+        unsafe { core::slice::from_raw_parts_mut(self.buf.as_mut_ptr().cast::<T>(), self.len) }
+    }
+
     /// Constructs a [`ConstArray`] from its raw parts.
     /// 
     /// # Safety
