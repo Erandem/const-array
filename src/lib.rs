@@ -204,14 +204,28 @@ impl<T, const N: usize> ConstArray<T, N> {
         unsafe { core::slice::from_raw_parts(self.buf.as_ptr().cast::<T>(), self.len) }
     }
 
-    /// Constructs a ConstArray from its raw parts.
+    /// Constructs a [`ConstArray`] from its raw parts.
+    /// 
+    /// # Safety
+    /// It's required that the passed `len` is equivelant to the number of
+    /// valid entries in the array.
     /// 
     /// # Example
     /// ```rust
     /// # use const_array::ConstArray;
-    /// let mut arr = unsafe { ConstArray::from_raw_parts([1u32, 2, 3]) };
+    /// # use core::mem::MaybeUninit;
+    /// let items = [
+    ///     MaybeUninit::new(1u32),
+    ///     MaybeUninit::new(2),
+    ///     MaybeUninit::new(3),
+    ///     MaybeUninit::uninit(),
+    /// ];
+    /// 
+    /// let mut arr = unsafe { ConstArray::from_raw_parts(items, 3) };
     /// 
     /// assert_eq!(arr.as_slice(), &[1, 2, 3]);
+    /// assert_eq!(arr.capacity(), items.len());
+    /// # assert_eq!(arr.len(), 3);
     /// ```
     pub const unsafe fn from_raw_parts(array: [MaybeUninit<T>; N], len: usize) -> Self {
         Self {
