@@ -182,6 +182,39 @@ impl<T, const N: usize> ConstArray<T, N> {
         }
     }
 
+    /// Removes the specified item from the array
+    ///
+    /// # Example
+    /// ```rust
+    /// # use const_array::ConstArray;
+    /// let mut arr = ConstArray::from_array([0u32, 1, 2]);
+    ///
+    /// let item = arr.remove(1);
+    ///
+    /// assert_eq!(item, Some(1));
+    /// assert_eq!(arr.as_slice(), &[0, 2]);
+    /// # assert_eq!(arr.len(), 2);
+    /// ```
+    pub const fn remove(&mut self, index: usize) -> Option<T> {
+        if index >= self.len() {
+            return None;
+        }
+
+        // SAFETY: We know that index is < self.len(), meaning it is valid
+        let item = unsafe { self.buf[index].assume_init_read() };
+
+        // SAFETY: We shift all elements after the specified item one to the left
+        unsafe {
+            let ptr = self.buf.as_mut_ptr().add(index);
+            core::ptr::copy(ptr.add(1), ptr, self.len() - index - 1);
+        }
+
+        // Decrement after the move
+        self.len -= 1;
+
+        Some(item)
+    }
+
     /// Returns a slice that contains all initialized items
     ///
     /// # Example
