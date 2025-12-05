@@ -1,6 +1,9 @@
 #![cfg_attr(not(test), no_std)]
 
+use core::cmp::Ordering;
+use core::hash::Hasher;
 use core::mem::MaybeUninit;
+use core::ops::{Deref, DerefMut};
 
 pub struct ConstArray<T, const N: usize> {
     buf: [MaybeUninit<T>; N],
@@ -17,12 +20,12 @@ impl<T, const N: usize> ConstArray<T, N> {
     }
 
     /// Creates a new array from any size of passed array
-    /// 
+    ///
     /// # Example
     /// ```rust
     /// # use const_array::ConstArray;
     /// let arr = ConstArray::<u32, 16>::new([1, 2, 3]);
-    /// 
+    ///
     /// assert_eq!(arr.capacity(), 16);
     /// assert_eq!(arr.len(), 3);
     /// assert_eq!(arr.as_slice(), &[1, 2, 3]);
@@ -43,19 +46,16 @@ impl<T, const N: usize> ConstArray<T, N> {
         // We must forget the passed array, or else the values may be dropped multiple times
         core::mem::forget(array);
 
-        Self {
-            buf,
-            len: W,
-        }
+        Self { buf, len: W }
     }
 
     /// Creates a new const array from the passed array.
-    /// 
+    ///
     /// # Example
     /// ```rust
     /// # use const_array::ConstArray;
     /// let arr = ConstArray::from_array([1u32, 2, 3, 4]);
-    /// 
+    ///
     /// assert_eq!(arr.capacity(), 4);
     /// assert_eq!(arr.len(), 4);
     /// assert_eq!(arr.as_slice(), &[1, 2, 3, 4]);
@@ -73,10 +73,10 @@ impl<T, const N: usize> ConstArray<T, N> {
     /// ```rust
     /// # use const_array::ConstArray;
     /// let mut arr = ConstArray::<u32, 16>::uninit();
-    /// 
+    ///
     /// arr.push_front(20);
     /// arr.push_front(10);
-    /// 
+    ///
     /// assert_eq!(arr.as_slice(), &[10, 20]);
     /// ```
     pub const fn push_front(&mut self, item: T) -> Result<(), T> {
@@ -123,12 +123,12 @@ impl<T, const N: usize> ConstArray<T, N> {
     }
 
     /// Attemps to pop the front item from this array.
-    /// 
+    ///
     /// # Example
     /// ```rust
     /// # use const_array::ConstArray;
     /// let mut arr = ConstArray::from_array([1u32, 2]);
-    /// 
+    ///
     /// assert_eq!(arr.pop_front(), Some(1));
     /// assert_eq!(arr.pop_front(), Some(2));
     /// assert_eq!(arr.pop_front(), None);
@@ -149,19 +149,19 @@ impl<T, const N: usize> ConstArray<T, N> {
                     let ptr = self.buf.as_mut_ptr();
                     core::ptr::copy(ptr.add(1), ptr, len - 1);
                 }
-                
+
                 Some(obj)
             }
         }
     }
 
     ///  Attempts to pop the last item from this array.
-    /// 
+    ///
     /// # Example
     /// ```rust
     /// # use const_array::ConstArray;
     /// let mut arr = ConstArray::from_array([1u32, 2]);
-    /// 
+    ///
     /// assert_eq!(arr.pop_back(), Some(2));
     /// assert_eq!(arr.pop_back(), Some(1));
     /// assert_eq!(arr.pop_back(), None);
@@ -183,8 +183,6 @@ impl<T, const N: usize> ConstArray<T, N> {
     }
 
     /// Returns a slice that contains all initialized items
-    ///
-    /// The slice is guaranteed to be in order, from least to greatest
     ///
     /// # Example
     /// ```rust
@@ -223,11 +221,11 @@ impl<T, const N: usize> ConstArray<T, N> {
     }
 
     /// Constructs a [`ConstArray`] from its raw parts.
-    /// 
+    ///
     /// # Safety
     /// It's required that the passed `len` is equivelant to the number of
     /// valid entries in the array.
-    /// 
+    ///
     /// # Example
     /// ```rust
     /// # use const_array::ConstArray;
@@ -238,18 +236,15 @@ impl<T, const N: usize> ConstArray<T, N> {
     ///     MaybeUninit::new(3),
     ///     MaybeUninit::uninit(),
     /// ];
-    /// 
+    ///
     /// let mut arr = unsafe { ConstArray::from_raw_parts(items, 3) };
-    /// 
+    ///
     /// assert_eq!(arr.as_slice(), &[1, 2, 3]);
     /// assert_eq!(arr.capacity(), items.len());
     /// # assert_eq!(arr.len(), 3);
     /// ```
     pub const unsafe fn from_raw_parts(array: [MaybeUninit<T>; N], len: usize) -> Self {
-        Self {
-            buf: array,
-            len
-        }
+        Self { buf: array, len }
     }
 
     /// Decomposes the [`ConstArray`] into it's components (array, len)
@@ -332,13 +327,12 @@ impl<T, const N: usize> Drop for ConstArray<T, N> {
         for i in 0..self.len() {
             unsafe { self.buf[i].assume_init_drop() }
         }
-        
+
         self.len = 0;
     }
 }
 
-impl<T, const N: usize> Clone for ConstArray<T, N>
-where T: Clone {
+impl<T: Clone, const N: usize> Clone for ConstArray<T, N> {
     fn clone(&self) -> Self {
         let mut new_arr = ConstArray::<T, N>::uninit();
 
