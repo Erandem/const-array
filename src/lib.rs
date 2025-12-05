@@ -259,7 +259,7 @@ impl<T, const N: usize> ConstArray<T, N> {
         (buf, len)
     }
 
-    /// Converts the [`ConstArray`] to a standard [`[MaybeUninit<T>; N]`]
+    /// Converts the [`ConstArray`] to a standard `[MaybeUninit<T>; N]`
     pub const fn to_array(self) -> [MaybeUninit<T>; N] {
         // SAFETY: We invalidate the memory, and then forget about it immediately after.
         let buf = unsafe { core::ptr::read(&raw const self.buf) };
