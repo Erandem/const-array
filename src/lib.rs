@@ -137,22 +137,7 @@ impl<T, const N: usize> ConstArray<T, N> {
     /// # assert_eq!(arr.as_slice(), &[]);
     /// ```
     pub const fn pop_front(&mut self) -> Option<T> {
-        match self.len() {
-            0 => None,
-            len => {
-                // SAFETY: We know that this element is valid as the length is greater than 0
-                let obj = unsafe { self.buf[0].assume_init_read() };
-                self.len -= 1;
-
-                // SAFETY: We simply shift all elements to the left by one
-                unsafe {
-                    let ptr = self.buf.as_mut_ptr();
-                    core::ptr::copy(ptr.add(1), ptr, len - 1);
-                }
-
-                Some(obj)
-            }
-        }
+        self.remove(0)
     }
 
     ///  Attempts to pop the last item from this array.
