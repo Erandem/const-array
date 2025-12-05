@@ -204,10 +204,24 @@ impl<T, const N: usize> ConstArray<T, N> {
         unsafe { core::slice::from_raw_parts(self.buf.as_ptr().cast::<T>(), self.len) }
     }
 
-    /// Converts the [`ConstArray`] to a standard [`MaybeUninit`] array and passes the length.
+    /// Constructs a ConstArray from its raw parts.
     /// 
-    /// This is intended to be used to convert this array type to other forms of arrays, such as a sorted array
-    pub const fn to_array(self) -> ([MaybeUninit<T>; N], usize) {
+    /// # Example
+    /// ```rust
+    /// # use const_array::ConstArray;
+    /// let mut arr = unsafe { ConstArray::from_raw_parts([1u32, 2, 3]) };
+    /// 
+    /// assert_eq!(arr.as_slice(), &[1, 2, 3]);
+    /// ```
+    pub const unsafe fn from_raw_parts(array: [MaybeUninit<T>; N], len: usize) -> Self {
+        Self {
+            buf: array,
+            len
+        }
+    }
+
+    /// Decomposes the [`ConstArray`] into it's components (array, len)
+    pub const fn into_raw_parts(self) -> ([MaybeUninit<T>; N], usize) {
         // SAFETY: To achieve this in a const-context, we must read the pointer without using ManuallyDrop
         let buf = unsafe { core::ptr::read(&raw const self.buf) };
         let len = self.len;
@@ -216,6 +230,17 @@ impl<T, const N: usize> ConstArray<T, N> {
         core::mem::forget(self);
 
         (buf, len)
+    }
+
+    /// Converts the [`ConstArray`] to a standard [`[MaybeUninit<T>; N]`]
+    pub const fn to_array(self) -> [MaybeUninit<T>; N] {
+        // SAFETY: We invalidate the memory, and then forget about it immediately after.
+        let buf = unsafe { core::ptr::read(&raw const self.buf) };
+
+        // We drop self as we do not have a destructor for this method, only for the array
+        core::mem::forget(self);
+
+        buf
     }
 
     /// Returns the number of used entries in the array.
