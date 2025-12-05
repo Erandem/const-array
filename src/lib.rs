@@ -350,5 +350,76 @@ where T: Clone {
     }
 }
 
+impl<T: core::fmt::Debug, const N: usize> core::fmt::Debug for ConstArray<T, N> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("ConstArray")
+            .field("buf", &self.buf)
+            .field("len", &self.len)
+            .finish()
+    }
+}
+
+impl<T, const N: usize> Default for ConstArray<T, N> {
+    fn default() -> Self {
+        Self::uninit()
+    }
+}
+
+impl<T: PartialEq, const N: usize> PartialEq for ConstArray<T, N> {
+    fn eq(&self, other: &Self) -> bool {
+        self.as_slice() == other.as_slice()
+    }
+}
+
+impl<T: Eq, const N: usize> Eq for ConstArray<T, N> {}
+
+impl<T: PartialOrd, const N: usize> PartialOrd for ConstArray<T, N> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.as_slice().partial_cmp(other.as_slice())
+    }
+}
+
+impl<T: Ord, const N: usize> Ord for ConstArray<T, N> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.as_slice().cmp(other.as_slice())
+    }
+}
+
+impl<T: core::hash::Hash, const N: usize> core::hash::Hash for ConstArray<T, N> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.as_slice().hash(state);
+    }
+}
+
+impl<T, const N: usize> AsRef<[T]> for ConstArray<T, N> {
+    fn as_ref(&self) -> &[T] {
+        self.as_slice()
+    }
+}
+
+impl<T, const N: usize> AsMut<[T]> for ConstArray<T, N> {
+    fn as_mut(&mut self) -> &mut [T] {
+        self.as_mut_slice()
+    }
+}
+
+impl<T, const N: usize> Deref for ConstArray<T, N> {
+    type Target = [T];
+
+    fn deref(&self) -> &[T] {
+        self.as_slice()
+    }
+}
+
+impl<T, const N: usize> DerefMut for ConstArray<T, N> {
+    fn deref_mut(&mut self) -> &mut [T] {
+        self.as_mut()
+    }
+}
+
+unsafe impl<T: Send, const N: usize> Send for ConstArray<T, N> {}
+
+unsafe impl<T: Sync, const N: usize> Sync for ConstArray<T, N> {}
+
 #[cfg(test)]
 mod tests {}
