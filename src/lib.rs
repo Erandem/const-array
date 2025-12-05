@@ -319,6 +319,15 @@ impl<T, const N: usize> ConstArray<T, N> {
             None
         }
     }
+
+    pub const fn get_mut(&mut self, index: usize) -> Option<&mut T> {
+        if index <= self.len() {
+            // SAFETY: Since index <= self.len(), only valid items can be retrieved
+            Some(unsafe { self.buf[index].assume_init_mut() })
+        } else {
+            None
+        }
+    }
 }
 
 /// Const-drop semantics are currently to be considered.
